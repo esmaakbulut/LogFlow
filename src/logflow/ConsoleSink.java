@@ -1,9 +1,14 @@
 package logflow;
 
-public class ConsoleSink implements Sink<String> {
+public class ConsoleSink implements Sink<LogRecord> {
 
     @Override
-    public void consume(String item) {
-        System.out.println(item);
+    public void consume(LogRecord item) {
+        System.out.println(
+            item.clientIp() + " " +
+            item.method() + " " +
+            item.path() + " " +
+            item.status()
+        );
     }
 }

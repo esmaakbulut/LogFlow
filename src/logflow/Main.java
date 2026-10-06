@@ -14,9 +14,10 @@ public class Main {
         Path filePath = Path.of(args[0]);
 
         Source<String> source = new FileLineSource(filePath);
-        Sink<String> sink = new ConsoleSink();
+        ParserStage parser = new ParserStage();
+        Sink<LogRecord> sink = new ConsoleSink();
 
-        Pipeline pipeline = new Pipeline(source, sink);
+        Pipeline pipeline = new Pipeline(source, parser, sink);
 
         pipeline.run();
     }

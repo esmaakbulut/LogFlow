@@ -14,3 +14,14 @@ LogFlow is a simple pipeline-based log processing application developed for the 
 
 ```bash
 javac -d out src/logflow/*.java
+
+## Test Coverage
+
+JUnit 5 tests were created for `ParserStage`.
+
+- Tests: 8
+- Successful tests: 8
+- Failed tests: 0
+- Line coverage: 67%
+
+Coverage was measured using JaCoCo.
