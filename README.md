@@ -25,3 +25,24 @@ JUnit 5 tests were created for `ParserStage`.
 - Line coverage: 67%
 
 Coverage was measured using JaCoCo.
+
+## Version 3 Features
+
+Version 3 adds configurable pipeline composition.
+
+### New Stages
+
+- `PredicateFilterStage`: filters `LogRecord` objects using predicates.
+- `ProjectionStage`: selects specific fields from a record.
+- `FileSink`: writes pipeline output to a file.
+
+### Pipeline Builder
+
+Pipelines can now be created using a fluent builder:
+
+```java
+PipelineBuilder.from(new FileLineSource(input))
+    .via(new ParserStage())
+    .via(new PredicateFilterStage(r -> r.status() >= 400))
+    .via(new ProjectionStage("clientIp", "status", "path"))
+    .to(new FileSink(output));
