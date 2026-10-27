@@ -43,6 +43,58 @@ Measured in one test run:
 - Order 2: 4,183,060 ns
 - Same result: true
 
-In this run, Order 1 was faster.
+Performance varied between test runs because the input is small and JVM execution times can fluctuate.
 
 These timing values may vary between runs, but the experiment shows that stage order can affect performance while producing the same final result.
+
+## Version 4 - Configuration-Driven Pipeline
+
+Version 4 separates pipeline definition from pipeline implementation.
+
+Instead of building the pipeline directly in Java code, LogFlow can now
+load the pipeline structure from a YAML configuration file.
+
+### Configuration Schema
+
+A configuration contains:
+
+- `pipeline`: root pipeline definition
+- `name`: pipeline name
+- `source`: input source configuration
+- `stages`: ordered processing stages
+- `sink`: output destination
+
+Example:
+
+```yaml
+pipeline:
+  name: error-report
+
+  source:
+    type: file
+    params:
+      path: data/access-small.log
+
+  stages:
+    - type: parse
+      params:
+        format: clf
+
+    - type: filter
+      params:
+        field: status
+        op: ">="
+        value: 400
+
+    - type: project
+      params:
+        fields:
+          - timestamp
+          - clientIp
+          - status
+          - path
+
+  sink:
+    type: file
+    params:
+      path: out/errors.txt

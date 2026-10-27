@@ -1,5 +1,38 @@
 # Change Log
 
+## v4 - Configuration-Driven Pipeline
+
+### Added
+
+- `configs/error-report.yaml`
+- `configs/api-traffic.yaml`
+- `configs/bandwidth-by-client.yaml`
+- `src/logflow/StageFactory.java`
+- `src/logflow/StageRegistry.java`
+- `src/logflow/PipelineLoader.java`
+- `test/logflow/PipelineLoaderTest.java`
+
+### Modified
+
+- `src/logflow/Main.java`
+- `src/logflow/Pipeline.java`
+- `src/logflow/Sink.java`
+- `data/access-small.log`
+- `ARCHITECTURE.md`
+- `README.md`
+
+### Changes
+
+- Added YAML-based pipeline configuration.
+- Added stage registry and factory system.
+- Added configuration loader.
+- Added configuration validation and fail-fast error handling.
+- Added three different pipeline configurations.
+- Added loader tests for valid and invalid configurations.
+- Total tests: 19
+- Successful tests: 19
+- Failed tests: 0
+
 ## v3 - Filtering, Projection and Pipeline Builder
 
 ### Added
