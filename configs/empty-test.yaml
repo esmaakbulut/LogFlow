@@ -1,0 +1,23 @@
+pipeline:
+  name: empty-file-test
+
+  source:
+    type: file
+    params:
+      path: data/access-empty.log
+
+  stages:
+    - type: parse
+      onError: DEAD_LETTER
+      params:
+        format: clf
+
+  sink:
+    type: file
+    params:
+      path: out/empty-output.txt
+
+  deadLetter:
+    type: file
+    params:
+      path: out/empty-dead-letter.txt

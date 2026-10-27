@@ -1,5 +1,72 @@
 # Change Log
 
+## v5 - Error Management, Validation and Dead-Letter Channel
+
+### Added
+
+- `src/logflow/PipelineException.java`
+- `src/logflow/ErrorPolicy.java`
+- `src/logflow/FailedRecord.java`
+- `src/logflow/DeadLetterSink.java`
+- `src/logflow/RunSummary.java`
+- `src/logflow/ValidationStage.java`
+- `configs/dirty-chaos.yaml`
+- `configs/empty-test.yaml`
+- `data/access-dirty.log`
+- `data/access-empty.log`
+- `test/logflow/ValidationStageTest.java`
+- `test/logflow/ErrorHandlingTest.java`
+
+### Modified
+
+- `src/logflow/ParserStage.java`
+- `src/logflow/StageRegistry.java`
+- `src/logflow/Pipeline.java`
+- `src/logflow/PipelineLoader.java`
+- `test/logflow/ParserStageTest.java`
+- `test/logflow/StageOrderingExperimentTest.java`
+- `ARCHITECTURE.md`
+- `README.md`
+
+### Changes
+
+- Added explicit record-level error handling using `StageException`.
+- Added pipeline-level failure handling using `PipelineException`.
+- Added configurable error policies:
+  - `FAIL_FAST`
+  - `SKIP`
+  - `DEAD_LETTER`
+  - `RETRY(n)`
+- Added `DeadLetterSink` as a secondary output path.
+- Added `FailedRecord` for storing failed record context.
+- Added `ValidationStage`.
+- Added validation for:
+  - required fields
+  - byte ranges
+  - timestamp ranges
+  - IPv4 format
+  - maximum line length
+  - non-ASCII user-agent data
+- Added `RunSummary`.
+- Added input, output and dead-letter counters.
+- Added dropped-record counting per stage.
+- Added actual elapsed-time measurement.
+- Added chaos testing using `data/access-dirty.log`.
+- Added empty-file testing using `data/access-empty.log`.
+- Dirty fixture result:
+  - Input records: 11
+  - Output records: 3
+  - Dead-letter records: 8
+- Empty fixture result:
+  - Input records: 0
+  - Output records: 0
+  - Dead-letter records: 0
+- Added automated tests for validation and error policies.
+- Added `RETRY(n)` behaviour test.
+- Total tests: 28
+- Successful tests: 28
+- Failed tests: 0
+
 ## v4 - Configuration-Driven Pipeline
 
 ### Added

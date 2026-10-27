@@ -13,7 +13,7 @@ public class StageOrderingExperimentTest {
     @Test
     void compareFilterOrders() throws Exception {
 
-        Path input = Path.of("data/access-small.log");
+        Path input = Path.of("test/logflow/fixture.log");
 
         Path output1 = Files.createTempFile("order1", ".txt");
         Path output2 = Files.createTempFile("order2", ".txt");
@@ -39,43 +39,53 @@ public class StageOrderingExperimentTest {
         Files.deleteIfExists(output2);
     }
 
-    private void runFirstOrder(Path input, Path output) throws Exception {
+    private void runFirstOrder(
+            Path input,
+            Path output) throws Exception {
 
         FileSink sink = new FileSink(output);
 
         Pipeline pipeline = PipelineBuilder
                 .from(new FileLineSource(input))
                 .via(new ParserStage())
-                .via(new PredicateFilterStage(r -> r.status() >= 400))
-                .via(new PredicateFilterStage(r -> r.path().startsWith("/admin")))
-                .via(new ProjectionStage("clientIp", "status", "path"))
+                .via(new PredicateFilterStage(
+                        r -> r.status() >= 400
+                ))
+                .via(new PredicateFilterStage(
+                        r -> r.path().startsWith("/admin")
+                ))
+                .via(new ProjectionStage(
+                        "clientIp",
+                        "status",
+                        "path"
+                ))
                 .to(sink);
 
-        sink.open();
-        try {
-            pipeline.run();
-        } finally {
-            sink.close();
-        }
+        pipeline.run();
     }
 
-    private void runSecondOrder(Path input, Path output) throws Exception {
+    private void runSecondOrder(
+            Path input,
+            Path output) throws Exception {
 
         FileSink sink = new FileSink(output);
 
         Pipeline pipeline = PipelineBuilder
                 .from(new FileLineSource(input))
                 .via(new ParserStage())
-                .via(new PredicateFilterStage(r -> r.path().startsWith("/admin")))
-                .via(new PredicateFilterStage(r -> r.status() >= 400))
-                .via(new ProjectionStage("clientIp", "status", "path"))
+                .via(new PredicateFilterStage(
+                        r -> r.path().startsWith("/admin")
+                ))
+                .via(new PredicateFilterStage(
+                        r -> r.status() >= 400
+                ))
+                .via(new ProjectionStage(
+                        "clientIp",
+                        "status",
+                        "path"
+                ))
                 .to(sink);
 
-        sink.open();
-        try {
-            pipeline.run();
-        } finally {
-            sink.close();
-        }
+        pipeline.run();
     }
 }

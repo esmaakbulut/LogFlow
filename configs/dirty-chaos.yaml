@@ -1,0 +1,46 @@
+pipeline:
+  name: dirty-chaos-test
+
+  source:
+    type: file
+    params:
+      path: data/access-dirty.log
+
+  stages:
+    - type: parse
+      onError: DEAD_LETTER
+      params:
+        format: clf
+
+    - type: validate
+      onError: DEAD_LETTER
+      params:
+        requiredFields:
+          - clientIp
+          - path
+        minBytes: 0
+        maxBytes: 10000000
+        minTimestamp: "2000-01-01T00:00:00Z"
+        maxTimestamp: "2030-12-31T23:59:59Z"
+        maxLineLength: 10000
+        asciiUserAgentOnly: true
+    - type: project
+      onError: FAIL_FAST
+      params:
+        fields:
+          - timestamp
+          - clientIp
+          - method
+          - path
+          - status
+          - bytes
+
+  sink:
+    type: file
+    params:
+      path: out/dirty-valid.txt
+
+  deadLetter:
+    type: file
+    params:
+      path: out/dead-letter.txt

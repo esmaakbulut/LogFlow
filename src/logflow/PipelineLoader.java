@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,20 +66,13 @@ public class PipelineLoader {
                 (Map<String, Object>) config.get("source");
 
         Map<String, Object> sourceParams =
-                (Map<String, Object>) sourceConfig.get("params");
+                getParams(sourceConfig);
 
-        if (sourceParams == null
-                || !(sourceParams.get("path") instanceof String)) {
-
-            throw new IllegalArgumentException(
-                    "Source parameter 'path' is required and must be a string"
-            );
-        }
+        String sourcePath =
+                requireString(sourceParams, "path");
 
         Source<?> source =
-                new FileLineSource(
-                        Path.of((String) sourceParams.get("path"))
-                );
+                new FileLineSource(Path.of(sourcePath));
 
         List<Map<String, Object>> stageConfigs =
                 (List<Map<String, Object>>) config.get("stages");
@@ -89,50 +83,173 @@ public class PipelineLoader {
             );
         }
 
-        List<Stage<?, ?>> stages = new ArrayList<>();
+        List<Stage<?, ?>> stages =
+                new ArrayList<>();
 
-        for (Map<String, Object> stageConfig : stageConfigs) {
+        Map<Integer, ErrorPolicy> policies =
+                new HashMap<>();
 
-            Object typeObject = stageConfig.get("type");
+        for (int i = 0; i < stageConfigs.size(); i++) {
 
-            if (!(typeObject instanceof String)) {
-                throw new IllegalArgumentException(
-                        "Stage type is required and must be a string"
-                );
-            }
+            Map<String, Object> stageConfig =
+                    stageConfigs.get(i);
 
-            String type = (String) typeObject;
+            String type =
+                    requireString(stageConfig, "type");
 
             Map<String, Object> params =
-                    (Map<String, Object>) stageConfig.get("params");
+                    getParams(stageConfig);
 
-            if (params == null) {
-                params = Map.of();
-            }
+            StageFactory factory =
+                    registry.getFactory(type);
 
-            StageFactory factory = registry.getFactory(type);
-            stages.add(factory.create(params));
+            Stage<?, ?> stage =
+                    factory.create(params);
+
+            stages.add(stage);
+
+            String policyText =
+                    getOptionalString(
+                            stageConfig,
+                            "onError",
+                            "FAIL_FAST"
+                    );
+
+            ErrorPolicy policy =
+                    ErrorPolicy.parse(policyText);
+
+            policies.put(i, policy);
         }
 
         Map<String, Object> sinkConfig =
                 (Map<String, Object>) config.get("sink");
 
         Map<String, Object> sinkParams =
-                (Map<String, Object>) sinkConfig.get("params");
+                getParams(sinkConfig);
 
-        if (sinkParams == null
-                || !(sinkParams.get("path") instanceof String)) {
+        String sinkPath =
+                requireString(sinkParams, "path");
 
+        Sink<?> sink =
+                new FileSink(Path.of(sinkPath));
+
+        DeadLetterSink deadLetterSink =
+                createDeadLetterSink(
+                        config,
+                        policies
+                );
+
+        RunSummary summary =
+                new RunSummary();
+
+        return new Pipeline(
+                source,
+                stages,
+                sink,
+                policies,
+                deadLetterSink,
+                summary
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private DeadLetterSink createDeadLetterSink(
+            Map<String, Object> config,
+            Map<Integer, ErrorPolicy> policies) {
+
+        boolean needsDeadLetter =
+                policies.values()
+                        .stream()
+                        .anyMatch(
+                                policy ->
+                                        policy.getType()
+                                                == ErrorPolicy.Type.DEAD_LETTER
+                        );
+
+        if (!needsDeadLetter) {
+            return null;
+        }
+
+        Object deadLetterObject =
+                config.get("deadLetter");
+
+        if (!(deadLetterObject instanceof Map<?, ?>)) {
             throw new IllegalArgumentException(
-                    "Sink parameter 'path' is required and must be a string"
+                    "deadLetter configuration is required "
+                            + "when DEAD_LETTER policy is used"
             );
         }
 
-        Sink<?> sink =
-                new FileSink(
-                        Path.of((String) sinkParams.get("path"))
-                );
+        Map<String, Object> deadLetterConfig =
+                (Map<String, Object>) deadLetterObject;
 
-        return new Pipeline(source, stages, sink);
+        Map<String, Object> params =
+                getParams(deadLetterConfig);
+
+        String path =
+                requireString(params, "path");
+
+        return new DeadLetterSink(
+                Path.of(path)
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getParams(
+            Map<String, Object> config) {
+
+        Object paramsObject =
+                config.get("params");
+
+        if (paramsObject == null) {
+            return Map.of();
+        }
+
+        if (!(paramsObject instanceof Map<?, ?>)) {
+            throw new IllegalArgumentException(
+                    "params must be a map"
+            );
+        }
+
+        return (Map<String, Object>) paramsObject;
+    }
+
+    private String requireString(
+            Map<String, Object> map,
+            String key) {
+
+        Object value =
+                map.get(key);
+
+        if (!(value instanceof String)) {
+            throw new IllegalArgumentException(
+                    "Parameter '" + key
+                            + "' is required and must be a string"
+            );
+        }
+
+        return (String) value;
+    }
+
+    private String getOptionalString(
+            Map<String, Object> map,
+            String key,
+            String defaultValue) {
+
+        Object value =
+                map.get(key);
+
+        if (value == null) {
+            return defaultValue;
+        }
+
+        if (!(value instanceof String)) {
+            throw new IllegalArgumentException(
+                    "Parameter '" + key
+                            + "' must be a string"
+            );
+        }
+
+        return (String) value;
     }
 }

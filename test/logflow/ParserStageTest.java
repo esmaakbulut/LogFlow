@@ -12,8 +12,8 @@ public class ParserStageTest {
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
         String line =
-            "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
-            "\"GET /index.html HTTP/1.1\" 200 1234 \"Mozilla Firefox\"";
+                "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
+                "\"GET /index.html HTTP/1.1\" 200 1234 \"Mozilla Firefox\"";
 
         parser.process(line, emitter);
 
@@ -28,58 +28,66 @@ public class ParserStageTest {
     }
 
     @Test
-    void missingField() throws StageException {
+    void missingFieldThrowsStageException() {
         ParserStage parser = new ParserStage();
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
-        parser.process(
-            "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300]",
-            emitter
+        assertThrows(
+                StageException.class,
+                () -> parser.process(
+                        "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300]",
+                        emitter
+                )
         );
 
         assertEquals(0, emitter.getItems().size());
-        assertEquals(1, parser.getInvalidCount());
     }
 
     @Test
-    void invalidTimestamp() throws StageException {
+    void invalidTimestampThrowsStageException() {
         ParserStage parser = new ParserStage();
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
         String line =
-            "127.0.0.1 - - [HATALI-TARIH] " +
-            "\"GET /index.html HTTP/1.1\" 200 1234 \"Safari\"";
+                "127.0.0.1 - - [HATALI-TARIH] " +
+                "\"GET /index.html HTTP/1.1\" 200 1234 \"Safari\"";
 
-        parser.process(line, emitter);
+        assertThrows(
+                StageException.class,
+                () -> parser.process(line, emitter)
+        );
 
         assertEquals(0, emitter.getItems().size());
-        assertEquals(1, parser.getInvalidCount());
     }
 
     @Test
-    void invalidStatusCode() throws StageException {
+    void invalidStatusCodeThrowsStageException() {
         ParserStage parser = new ParserStage();
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
         String line =
-            "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
-            "\"GET /index.html HTTP/1.1\" ABC 1234 \"Safari\"";
+                "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
+                "\"GET /index.html HTTP/1.1\" ABC 1234 \"Safari\"";
 
-        parser.process(line, emitter);
+        assertThrows(
+                StageException.class,
+                () -> parser.process(line, emitter)
+        );
 
         assertEquals(0, emitter.getItems().size());
-        assertEquals(1, parser.getInvalidCount());
     }
 
     @Test
-    void emptyLine() throws StageException {
+    void emptyLineThrowsStageException() {
         ParserStage parser = new ParserStage();
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
-        parser.process("", emitter);
+        assertThrows(
+                StageException.class,
+                () -> parser.process("", emitter)
+        );
 
         assertEquals(0, emitter.getItems().size());
-        assertEquals(1, parser.getInvalidCount());
     }
 
     @Test
@@ -88,8 +96,8 @@ public class ParserStageTest {
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
         String line =
-            "127.0.0.1    -    -    [10/Oct/2026:13:55:36 +0300]    " +
-            "\"GET /index.html HTTP/1.1\"    200    1234    \"Safari\"";
+                "127.0.0.1    -    -    [10/Oct/2026:13:55:36 +0300]    " +
+                "\"GET /index.html HTTP/1.1\"    200    1234    \"Safari\"";
 
         parser.process(line, emitter);
 
@@ -102,17 +110,17 @@ public class ParserStageTest {
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
         String line =
-            "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
-            "\"GET /index.html HTTP/1.1\" 200 1234 " +
-            "\"Mozilla Firefox Browser\"";
+                "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
+                "\"GET /index.html HTTP/1.1\" 200 1234 " +
+                "\"Mozilla Firefox Browser\"";
 
         parser.process(line, emitter);
 
         assertEquals(1, emitter.getItems().size());
 
         assertEquals(
-            "Mozilla Firefox Browser",
-            emitter.getItems().get(0).userAgent()
+                "Mozilla Firefox Browser",
+                emitter.getItems().get(0).userAgent()
         );
     }
 
@@ -122,16 +130,16 @@ public class ParserStageTest {
         CollectingEmitter<LogRecord> emitter = new CollectingEmitter<>();
 
         String line =
-            "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
-            "\"GET /products?id=5 HTTP/1.1\" 200 2048 \"Chrome\"";
+                "127.0.0.1 - - [10/Oct/2026:13:55:36 +0300] " +
+                "\"GET /products?id=5 HTTP/1.1\" 200 2048 \"Chrome\"";
 
         parser.process(line, emitter);
 
         assertEquals(1, emitter.getItems().size());
 
         assertEquals(
-            "/products?id=5",
-            emitter.getItems().get(0).path()
+                "/products?id=5",
+                emitter.getItems().get(0).path()
         );
     }
 }
